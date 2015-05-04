@@ -95,6 +95,8 @@ FreeIMU::FreeIMU() {
 void FreeIMU::init() {
   #if HAS_ITG3200()
   init(FIMU_ACC_ADDR, FIMU_ITG3200_DEF_ADDR, false);
+  #elif defined(POLOLU_MINIIMU_V2)
+  init(FIMU_ACC_ADDR, FIMU_GYRO_ADDR, false);
   #else
   init(FIMU_ACCGYRO_ADDR, false);
   #endif
@@ -103,6 +105,8 @@ void FreeIMU::init() {
 void FreeIMU::init(bool fastmode) {
   #if HAS_ITG3200()
   init(FIMU_ACC_ADDR, FIMU_ITG3200_DEF_ADDR, fastmode);
+  #elif defined(POLOLU_MINIIMU_V2)
+  init(FIMU_ACC_ADDR, FIMU_GYRO_ADDR, fastmode);
   #else
   init(FIMU_ACCGYRO_ADDR, fastmode);
   #endif
@@ -112,7 +116,7 @@ void FreeIMU::init(bool fastmode) {
 /**
  * Initialize the FreeIMU I2C bus, sensors and performs gyro offsets calibration
 */
-#if HAS_ITG3200()
+#if HAS_ITG3200() || defined(POLOLU_MINIIMU_V2)
 void FreeIMU::init(int acc_addr, int gyro_addr, bool fastmode) {
 #else
 void FreeIMU::init(int accgyro_addr, bool fastmode) {
@@ -192,6 +196,22 @@ void FreeIMU::init(int accgyro_addr, bool fastmode) {
   #if HAS_MS5611()
     baro.init(FIMU_BARO_ADDR);
   #endif
+
+  #if HAS_L3G()
+    gyro.init();
+    gyro.enableDefault();
+  #endif
+
+  #if HAS_LSM303()
+    acc.init();
+    acc.enableDefault();
+    // enable temperature
+    byte cra_reg_m = acc.readMagReg(LSM303::CRA_REG_M);
+    cra_reg_m = cra_reg_m | 0xc0;
+    delay(10);
+    acc.writeMagReg(LSM303::CRA_REG_M, cra_reg_m);  // Enable temperature sensor
+    delay(10);
+  #endif
     
   // zero gyro
   zeroGyro();
@@ -261,8 +281,30 @@ void FreeIMU::getRawValues(int * raw_values) {
   #else
     accgyro.getMotion6(&raw_values[0], &raw_values[1], &raw_values[2], &raw_values[3], &raw_values[4], &raw_values[5]);
   #endif
+
   #if HAS_HMC5883L()
     magn.getValues(&raw_values[6], &raw_values[7], &raw_values[8]);
+  #endif
+
+  #if HAS_LSM303()
+    int temp = (int)((compass.readMagReg(LSM303::TEMP_OUT_H_M)<<8)+compass.readMagReg(LSM303::TEMP_OUT_L_M))/16;
+    raw_values[9] = temp;
+
+    acc.read();
+    raw_values[0] = compass.a.x;
+    raw_values[1] = compass.a.y;
+    raw_values[2] = compass.a.z;
+
+    raw_values[6] = compass.m.x;
+    raw_values[7] = compass.m.y;
+    raw_values[8] = compass.m.z;
+  #endif
+
+  #if HAS_L3G()
+    gyro.read();
+    raw_values[3] = gyro.g.x;
+    raw_values[4] = gyro.g.y;
+    raw_values[5] = gyro.g.z;
   #endif
   
   #if HAS_MS5611()
@@ -288,6 +330,20 @@ void FreeIMU::getValues(float * values) {
     values[1] = (float) accval[1];
     values[2] = (float) accval[2];
     gyro.readGyro(&values[3]);
+  #elif POLOLU_MINIIMU_V2
+    acc.read();
+    gyro.read();
+    raw_values[0] = (float)acc.a.x;
+    raw_values[1] = (float)acc.a.y;
+    raw_values[2] = (float)acc.a.z;
+
+    raw_values[3] = (float)gyro.g.x;
+    raw_values[4] = (float)gyro.g.y;
+    raw_values[5] = (float)gyro.g.z;
+
+    raw_values[6] = (float)acc.m.x;
+    raw_values[7] = (float)acc.m.y;
+    raw_values[8] = (float)acc.m.z;
   #else // MPU6050
     int16_t accgyroval[6];
     accgyro.getMotion6(&accgyroval[0], &accgyroval[1], &accgyroval[2], &accgyroval[3], &accgyroval[4], &accgyroval[5]);

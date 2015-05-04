@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define FREEIMU_v035
 //#define FREEIMU_v035_MS
 //#define FREEIMU_v035_BMP
-#define FREEIMU_v04
+//#define FREEIMU_v04
 
 // 3rd party boards. Please consider donating or buying a FreeIMU board to support this library development.
 //#define SEN_10121 //IMU Digital Combo Board - 6 Degrees of Freedom ITG3200/ADXL345 SEN-10121 http://www.sparkfun.com/products/10121
@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
 //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
 //#define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
-
+//#define POLOLU_MINIIMU_V2
 // *** No configuration needed below this line ***
 
 
@@ -80,6 +80,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #define FREEIMU_ID "SparkFun 10183"
 #elif defined(ARDUIMU_v3)
   #define FREEIMU_ID "DIY Drones ArduIMU+ V3"
+#elif defined(POLOLU_MINIIMU_V2)
+  #define FREEIMU_ID "Pololu Mini-IMU v2"
 #endif
 
 
@@ -91,9 +93,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HAS_MS5611() (defined(FREEIMU_v035_MS) || defined(FREEIMU_v04))
 #define HAS_HMC5883L() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183)  || defined(ARDUIMU_v3))
 #define HAS_MPU6000() (defined(ARDUIMU_v3))
+#define HAS_L3G() (defined(POLOLU_MINIIMU_V2))
+#define HAS_LSM303() (defined(POLOLU_MINIIMU_V2))
 
 #define IS_6DOM() (defined(SEN_10121) || defined(GEN_MPU6050))
-#define IS_9DOM() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183) || defined(ARDUIMU_v3))
+#define IS_9DOM() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10736) || defined(SEN_10724) || defined(SEN_10183) || defined(ARDUIMU_v3) || defined(POLOLU_MINIIMU_V2))
 #define HAS_AXIS_ALIGNED() (defined(FREEIMU_v01) || defined(FREEIMU_v02) || defined(FREEIMU_v03) || defined(FREEIMU_v035) || defined(FREEIMU_v035_MS) || defined(FREEIMU_v035_BMP) || defined(FREEIMU_v04) || defined(SEN_10121) || defined(SEN_10736))
 
 
@@ -130,6 +134,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #include "I2Cdev.h"
   #include "MPU60X0.h"
   #define FIMU_ACCGYRO_ADDR MPU60X0_DEFAULT_SS_PIN
+#elif HAS_LSM303()
+  #include <LSM303.h>
+  #define FIMU_ACC_ADDR D_SA0_LOW_ADDRESS
+#endif
+
+#if HAS_L3G()
+  #include <L3G.h>
+  #define FIMU_GYRO_ADDR L3GD20_ADDRESS_SA0_LOW
 #endif
 
 
@@ -146,7 +158,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if HAS_HMC5883L()
   #include <HMC58X3.h>
 #endif
-
 
 #define FIMU_BMA180_DEF_ADDR BMA180_ADDRESS_SDO_LOW
 #define FIMU_ITG3200_DEF_ADDR ITG3200_ADDR_AD0_LOW // AD0 connected to GND
@@ -166,7 +177,7 @@ class FreeIMU
     FreeIMU();
     void init();
     void init(bool fastmode);
-    #if HAS_ITG3200()
+    #if HAS_ITG3200() || defined(POLOLU_MINIIMU_V2)
     void init(int acc_addr, int gyro_addr, bool fastmode);
     #else
     void init(int accgyro_addr, bool fastmode);
@@ -195,6 +206,8 @@ class FreeIMU
       ADXL345 acc;
     #elif HAS_BMA180()
       BMA180 acc;
+    #elif HAS_LSM303()
+      LSM303 acc;
     #endif
     
     #if HAS_HMC5883L()
@@ -207,7 +220,9 @@ class FreeIMU
     #elif HAS_MPU6050()
       MPU60X0 accgyro; 
     #elif HAS_MPU6000()
-      MPU60X0 accgyro; 
+      MPU60X0 accgyro;
+    #elif HAS_L3G()
+      L3G gyro; 
     #endif
       
       
