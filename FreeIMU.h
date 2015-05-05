@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define SEN_10183 //9 Degrees of Freedom - Sensor Stick  SEN-10183 http://www.sparkfun.com/products/10183
 //#define ARDUIMU_v3 //  DIYDrones ArduIMU+ V3 http://store.diydrones.com/ArduIMU_V3_p/kt-arduimu-30.htm or https://www.sparkfun.com/products/11055
 //#define GEN_MPU6050 // Generic MPU6050 breakout board. Compatible with GY-521, SEN-11028 and other MPU6050 wich have the MPU6050 AD0 pin connected to GND.
-//#define POLOLU_MINIIMU_V2
+#define POLOLU_MINIIMU_V2
 // *** No configuration needed below this line ***
 
 
@@ -136,12 +136,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   #define FIMU_ACCGYRO_ADDR MPU60X0_DEFAULT_SS_PIN
 #elif HAS_LSM303()
   #include <LSM303.h>
-  #define FIMU_ACC_ADDR D_SA0_LOW_ADDRESS
+  #define FIMU_ACC_ADDR 0b0011110
 #endif
 
 #if HAS_L3G()
   #include <L3G.h>
-  #define FIMU_GYRO_ADDR L3GD20_ADDRESS_SA0_LOW
+  #define FIMU_GYRO_ADDR (0xD4 >> 1)
 #endif
 
 

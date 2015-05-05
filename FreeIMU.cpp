@@ -278,6 +278,8 @@ void FreeIMU::getRawValues(int * raw_values) {
   #if HAS_ITG3200()
     acc.readAccel(&raw_values[0], &raw_values[1], &raw_values[2]);
     gyro.readGyroRaw(&raw_values[3], &raw_values[4], &raw_values[5]);
+  #elif defined(POLOLU_MINIIMU_V2)
+
   #else
     accgyro.getMotion6(&raw_values[0], &raw_values[1], &raw_values[2], &raw_values[3], &raw_values[4], &raw_values[5]);
   #endif
@@ -287,17 +289,17 @@ void FreeIMU::getRawValues(int * raw_values) {
   #endif
 
   #if HAS_LSM303()
-    int temp = (int)((compass.readMagReg(LSM303::TEMP_OUT_H_M)<<8)+compass.readMagReg(LSM303::TEMP_OUT_L_M))/16;
+    int temp = (int)((acc.readMagReg(LSM303::TEMP_OUT_H_M)<<8)+acc.readMagReg(LSM303::TEMP_OUT_L_M))/16;
     raw_values[9] = temp;
 
     acc.read();
-    raw_values[0] = compass.a.x;
-    raw_values[1] = compass.a.y;
-    raw_values[2] = compass.a.z;
+    raw_values[0] = acc.a.x;
+    raw_values[1] = acc.a.y;
+    raw_values[2] = acc.a.z;
 
-    raw_values[6] = compass.m.x;
-    raw_values[7] = compass.m.y;
-    raw_values[8] = compass.m.z;
+    raw_values[6] = acc.m.x;
+    raw_values[7] = acc.m.y;
+    raw_values[8] = acc.m.z;
   #endif
 
   #if HAS_L3G()
@@ -330,20 +332,20 @@ void FreeIMU::getValues(float * values) {
     values[1] = (float) accval[1];
     values[2] = (float) accval[2];
     gyro.readGyro(&values[3]);
-  #elif POLOLU_MINIIMU_V2
+  #elif defined(POLOLU_MINIIMU_V2)
     acc.read();
     gyro.read();
-    raw_values[0] = (float)acc.a.x;
-    raw_values[1] = (float)acc.a.y;
-    raw_values[2] = (float)acc.a.z;
+    values[0] = (float)acc.a.x;
+    values[1] = (float)acc.a.y;
+    values[2] = (float)acc.a.z;
 
-    raw_values[3] = (float)gyro.g.x;
-    raw_values[4] = (float)gyro.g.y;
-    raw_values[5] = (float)gyro.g.z;
+    values[3] = (float)gyro.g.x;
+    values[4] = (float)gyro.g.y;
+    values[5] = (float)gyro.g.z;
 
-    raw_values[6] = (float)acc.m.x;
-    raw_values[7] = (float)acc.m.y;
-    raw_values[8] = (float)acc.m.z;
+    values[6] = (float)acc.m.x;
+    values[7] = (float)acc.m.y;
+    values[8] = (float)acc.m.z;
   #else // MPU6050
     int16_t accgyroval[6];
     accgyro.getMotion6(&accgyroval[0], &accgyroval[1], &accgyroval[2], &accgyroval[3], &accgyroval[4], &accgyroval[5]);
